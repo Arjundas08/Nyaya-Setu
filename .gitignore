@@ -6,3 +6,7 @@ venv/
 chroma_db/
 *.db
 .DS_Store
+# ── NEW: Auto-generated AI databases ──────────
+chroma_db/
+faiss_index/
+*.db
