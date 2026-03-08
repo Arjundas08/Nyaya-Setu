@@ -64,12 +64,14 @@ async def ask(req: ChatRequest):
     )
 
     return {
-        "answer":       result["answer"],
-        "sources":      result["sources"],
-        "chunks_used":  result["chunks_used"],
-        "session_id":   req.session_id,
-        "has_document": bool(doc_text),
-        "language":     req.language,
+        "answer":          result["answer"],
+        "sources":         result["sources"],
+        "chunks_used":     result["chunks_used"],
+        "contract_hits":   result.get("contract_hits", 0),  # [NEW]
+        "law_hits":        result.get("law_hits", 0),       # [NEW]
+        "session_id":      req.session_id,
+        "has_document":    bool(doc_text),
+        "language":        req.language,
     }
 
 
