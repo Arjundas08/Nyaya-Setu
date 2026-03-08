@@ -1,9 +1,14 @@
 # ════════════════════════════════════════════════════════
-# FILE: backend/main.py  ← REPLACE your entire file with this
+# FILE: backend/main.py
 # ════════════════════════════════════════════════════════
 
-import sys
 import os
+os.environ["ANONYMIZED_TELEMETRY"] = "False"   # kills ChromaDB noise
+os.environ["CHROMA_TELEMETRY"]     = "False"   # belt and suspenders
+import sys
+
+
+
 
 # ── This line lets Python find services/ and routes/ ───
 # Required because we run uvicorn from nyaya-setu-1/ root
@@ -19,6 +24,32 @@ from routes.search    import router as search_router
 from routes.generate  import router as generate_router
 from routes.predict   import router as predict_router
 from routes.dashboard import router as dashboard_router
+
+
+def _validate_env():
+    """Check all required env vars exist before server starts."""
+    required = {
+        "GROQ_API_KEY": "Get from https://console.groq.com",
+        "GROQ_MODEL":   "e.g. llama-3.1-8b-instant",
+        "MONGO_URI":    "Get from MongoDB Atlas dashboard",
+    }
+    missing = []
+    for key, hint in required.items():
+        if not os.getenv(key):
+            missing.append(f"  ❌ {key} — {hint}")
+
+    if missing:
+        print("\n" + "="*50)
+        print("  MISSING ENV VARIABLES — server cannot start")
+        print("="*50)
+        for m in missing:
+            print(m)
+        print("\n  Add these to your .env file and restart.")
+        print("="*50 + "\n")
+        # Don't raise — warn and continue so other endpoints work
+        # raise EnvironmentError("Missing env vars")
+
+_validate_env()   # call this right after imports in main.py
 
 # ── Create the FastAPI app ──────────────────────────────
 app = FastAPI(
@@ -45,7 +76,7 @@ app.include_router(search_router,   prefix="/search",    tags=["Case Search"])
 app.include_router(generate_router, prefix="/generate",  tags=["Doc Generator"])
 app.include_router(predict_router,  prefix="/predict",   tags=["Outcome Predictor"])
 app.include_router(dashboard_router,prefix="/dashboard", tags=["Dashboard"])
- 
+
 
 # ── Root endpoint ───────────────────────────────────────
 @app.get("/", tags=["Health"])
@@ -71,8 +102,14 @@ def root():
     }
 
 @app.get("/health", tags=["Health"])
-def health():
-    return {"status": "healthy"}
+async def health():
+    from services.database import is_connected
+    return {
+        "status":   "healthy",
+        "version":  "2.0",
+        "mongodb":  "connected" if is_connected() else "not_connected",
+        "model":    os.getenv("GROQ_MODEL", "llama-3.1-8b-instant"),
+    }
 
 # ════════════════════════════════════════════════════════
 # HOW TO RUN (from nyaya-setu-1/ root folder):

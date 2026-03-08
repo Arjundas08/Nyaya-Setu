@@ -48,9 +48,9 @@ if not GROQ_API_KEY:
 # LOAD GROQ LLM
 # ════════════════════════════════════════════════════════
 print("Loading Groq LLM...")
-llm = ChatGroq(
+_llm = ChatGroq(
     api_key=GROQ_API_KEY,
-    model_name="llama-3.1-8b-instant",
+    model_name=os.getenv("GROQ_MODEL", "llama-3.1-8b-instant"),   #NEW
     temperature=0.1,
     max_tokens=2000,
     request_timeout=30,
