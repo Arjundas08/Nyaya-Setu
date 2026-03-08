@@ -17,7 +17,7 @@ router = APIRouter()
 
 _llm = ChatGroq(
     api_key=os.getenv("GROQ_API_KEY"),
-    model_name="llama-3.1-8b-instant",
+    model_name=os.getenv("GROQ_MODEL", "llama-3.1-8b-instant"),
     temperature=0.1,
     max_tokens=1000,
 )

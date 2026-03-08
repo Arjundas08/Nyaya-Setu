@@ -30,7 +30,7 @@ if not GROQ_API_KEY:
 
 _llm = ChatGroq(
     api_key=GROQ_API_KEY,
-    model_name="llama-3.1-8b-instant",
+    model_name=os.getenv("GROQ_MODEL", "llama-3.1-8b-instant"),  #NEW
     temperature=0,
     max_tokens=3000,
     request_timeout=30,

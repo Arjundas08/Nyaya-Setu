@@ -190,7 +190,16 @@ async def upload_document(
     file_type_label = "pdf" if is_pdf else "image"
     _store.set(session_id, safe_text, filename, file_type_label)
 
-    # ── [NEW] 5. Build per-session document vector store ─────
+    # ── [FIX] Clear old doc store before building new ────────
+    try:
+        from services.doc_vectorstore import delete_doc_store
+        delete_doc_store(session_id)
+        logger.info(f"Cleared old doc store for {session_id[:8]}...")
+    except Exception as e:
+        logger.warning(f"Failed to clear old doc store: {e}")
+    # ─────────────────────────────────────────────────────────
+
+    # 5. Build per-session document vector store
     t0 = time.monotonic()
     doc_chunks = 0
     try:
@@ -224,8 +233,8 @@ async def upload_document(
         "file_size_kb": len(file_bytes) // 1024,
         "total_chars": len(safe_text),
         "text_preview": safe_text[:600],
-        "doc_chunks": doc_chunks,       # Added
-        "doc_searchable": doc_chunks > 0, # Added
+        "doc_chunks": doc_chunks,
+        "doc_searchable": doc_chunks > 0,
         "clauses": clauses,
         "clause_count": len(clauses),
         "high_risk_count": sum(1 for c in clauses if c.get("risk_level") == "high"),
@@ -238,7 +247,7 @@ async def upload_document(
 @router.delete("/doc/{session_id}")
 async def delete_document(session_id: str):
     deleted = _store.delete(session_id)
-    # ── [NEW] Also delete the document vector store ─────
+    # Also delete the document vector store
     try:
         from services.doc_vectorstore import delete_doc_store
         delete_doc_store(session_id)
@@ -251,12 +260,19 @@ async def delete_document(session_id: str):
         "message": "Session cleared." if deleted else "Session not found."
     }
 
-# Remaining endpoints (get_risk, get_document, get_stats) stay as they were
+
+# ── FIX IS HERE: Create a specific request model ──
+class RiskRequest(BaseModel):
+    session_id: str
+
 @router.post("/risk")
-async def get_risk(req: BaseModel): # Simplified for brevity, use your SessionReq
+async def get_risk(req: RiskRequest):
     session = _store.get(req.session_id)
-    if not session: raise HTTPException(status_code=404, detail="Session not found.")
+    if not session: 
+        raise HTTPException(status_code=404, detail="Session not found.")
     return {"session_id": req.session_id, "risk": session.risk, "clauses": session.clauses, "cached": True}
+# ──────────────────────────────────────────────────
+
 
 @router.get("/doc/{session_id}")
 async def get_document(session_id: str):
