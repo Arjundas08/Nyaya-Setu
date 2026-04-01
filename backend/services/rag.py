@@ -13,6 +13,7 @@
 #        → LAW CONTEXT (from ChromaDB)
 #        → CONVERSATION HISTORY
 #   4. Fixed: get_relevant_documents() → invoke() (deprecation)
+#   5. Fixed: llm.invoke() → _llm.invoke() (NameError bug)
 # ════════════════════════════════════════════════════════
 
 import os
@@ -50,9 +51,9 @@ if not GROQ_API_KEY:
 print("Loading Groq LLM...")
 _llm = ChatGroq(
     api_key=GROQ_API_KEY,
-    model_name=os.getenv("GROQ_MODEL", "llama-3.1-8b-instant"),   #NEW
+    model_name=os.getenv("GROQ_MODEL", "llama-3.1-8b-instant"),
     temperature=0.1,
-    max_tokens=2000,
+    max_tokens=1024,   # ← reduced: was 2000, frees ~1000 tokens from TPM budget
     request_timeout=30,
 )
 print("✅ Groq LLM ready")
@@ -65,7 +66,7 @@ print("✅ Groq LLM ready")
 # This prevents loading the 90MB model twice.
 # ════════════════════════════════════════════════════════
 print("Loading ChromaDB...")
-_embeddings = None   # exported — used by doc_vectorstore.py
+_embeddings  = None   # exported — used by doc_vectorstore.py
 _vectorstore = None
 _retriever   = None
 
@@ -82,7 +83,7 @@ try:
     )
     _retriever = _vectorstore.as_retriever(
         search_type="similarity",
-        search_kwargs={"k": 4}   # Top 4 law chunks
+        search_kwargs={"k": 3}   # Top 3 law chunks — k=4 was hitting TPM limit
     )
     chunk_count = _vectorstore._collection.count()
     print(f"✅ ChromaDB loaded — {chunk_count} law chunks ready")
@@ -168,7 +169,7 @@ def _search_laws(query: str) -> list:
     if not _retriever:
         return []
     try:
-        return _retriever.invoke(query)   # Fixed: was get_relevant_documents()
+        return _retriever.invoke(query)
     except Exception as e:
         logger.error(f"Law search error: {e}")
         return []
@@ -181,10 +182,6 @@ def _build_dual_context(
     """
     Combine contract chunks + law chunks into a single context string.
     Returns (context_text, sources_list).
-
-    The context has TWO clearly labelled sections:
-      ── FROM YOUR CONTRACT ──   ← specific to user's document
-      ── FROM INDIAN LAW ──      ← from our 14 law PDFs
     """
     parts   = []
     sources = []
@@ -193,7 +190,7 @@ def _build_dual_context(
     if contract_chunks:
         parts.append("══ RELEVANT CLAUSES FROM YOUR UPLOADED CONTRACT ══")
         for i, chunk in enumerate(contract_chunks):
-            text = chunk.page_content.strip()
+            text = chunk.page_content.strip()[:400]   # cap per chunk to save tokens
             parts.append(f"[Contract Clause {i+1}]\n{text}")
         parts.append("══ END OF CONTRACT CONTEXT ══")
 
@@ -203,7 +200,7 @@ def _build_dual_context(
         for chunk in law_chunks:
             act_name  = chunk.metadata.get("act_name", "Indian Law")
             act_short = chunk.metadata.get("act_short", "")
-            text      = chunk.page_content.strip()
+            text      = chunk.page_content.strip()[:400]   # cap per chunk to save tokens
             parts.append(f"[{act_name}]\n{text}")
             if act_name not in sources:
                 sources.append(act_name)
@@ -261,17 +258,16 @@ def ask_lawyer(question: str, document_text: str, session_id: str) -> dict:
         ))
 
     # Fallback: if FAISS not built yet, use raw document text
-    # This handles edge case where user asks before store is ready
     if not contract_chunks and document_text and document_text.strip():
-        fallback = document_text[:2000]
+        fallback = document_text[:1200]   # ← reduced: was 2000
         messages.append(SystemMessage(
             content=f"USER'S DOCUMENT (direct text — no vector search):\n{fallback}"
         ))
         logger.debug(f"Using document text fallback for {session_id[:8]}...")
 
-    # Previous conversation — last 6 messages (3 exchanges)
+    # Previous conversation — last 4 messages (2 exchanges) — reduced from 6 to save tokens
     history = _get_history(session_id)
-    for msg in history[-6:]:
+    for msg in history[-4:]:
         messages.append(msg)
 
     # Current question
@@ -279,7 +275,7 @@ def ask_lawyer(question: str, document_text: str, session_id: str) -> dict:
 
     # ── STEP 4: Get answer from Groq ────────────────────
     try:
-        response = llm.invoke(messages)
+        response = _llm.invoke(messages)   # ← FIX: was bare `llm` (NameError)
         answer   = response.content
 
         # Save to memory
