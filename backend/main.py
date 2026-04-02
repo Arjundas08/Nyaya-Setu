@@ -24,6 +24,7 @@ from routes.search    import router as search_router
 from routes.generate  import router as generate_router
 from routes.predict   import router as predict_router
 from routes.dashboard import router as dashboard_router
+from routes.voice     import router as voice_router
 
 
 def _validate_env():
@@ -76,6 +77,7 @@ app.include_router(search_router,   prefix="/search",    tags=["Case Search"])
 app.include_router(generate_router, prefix="/generate",  tags=["Doc Generator"])
 app.include_router(predict_router,  prefix="/predict",   tags=["Outcome Predictor"])
 app.include_router(dashboard_router,prefix="/dashboard", tags=["Dashboard"])
+app.include_router(voice_router,    prefix="/voice",     tags=["Voice Services"])
 
 
 # ── Root endpoint ───────────────────────────────────────
@@ -98,6 +100,11 @@ def root():
             "generate_doc":      "POST /generate/document",
             "predict_outcome":   "POST /predict/outcome",
             "dashboard":         "GET  /dashboard/{session_id}",
+            "voice_transcribe":  "POST /voice/transcribe",
+            "voice_synthesize":  "POST /voice/synthesize",
+            "voice_translate":   "POST /voice/translate",
+            "voice_detect":      "POST /voice/detect",
+            "voice_status":      "GET  /voice/status",
         }
     }
 

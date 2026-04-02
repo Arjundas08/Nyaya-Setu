@@ -277,9 +277,10 @@ MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/nyayasetu?retryWri
 # Recommended
 INDIANKANOON_API_KEY=your_ik_token_here
 
-# Optional (for voice feature)
-BHASHINI_API_KEY=your_bhashini_key_here
-BHASHINI_USER_ID=your_bhashini_user_id_here
+# Optional (for voice feature — ASR, TTS, Translation)
+BHASHINI_USER_ID=your_user_id_here
+BHASHINI_API_KEY=your_ulca_api_key_here
+BHASHINI_INFERENCE_KEY=your_inference_api_key_here
 ```
 
 **Where to get each key:**
@@ -289,7 +290,7 @@ BHASHINI_USER_ID=your_bhashini_user_id_here
 | GROQ_API_KEY | console.groq.com — sign up with email | Free |
 | MONGO_URI | cloud.mongodb.com → Create free cluster → Connect → Drivers | Free (512MB) |
 | INDIANKANOON_API_KEY | api.indiankanoon.org/signup → sign up | ₹500 free credit on signup |
-| BHASHINI_API_KEY | bhashini.gov.in → Apply for API access | Free (govt API) |
+| BHASHINI_* (all 3) | bhashini.gov.in/ulca → My Profile → API Keys | Free (govt API) |
 
 ### Step 5 — Build the ChromaDB knowledge base
 
@@ -329,7 +330,7 @@ View the API documentation (all 14 endpoints with testing UI) at **http://localh
 
 ---
 
-## 🔌 All 14 API Endpoints
+## 🔌 All 19 API Endpoints
 
 | Method | Endpoint | What It Does |
 |---|---|---|
@@ -347,6 +348,11 @@ View the API documentation (all 14 endpoints with testing UI) at **http://localh
 | `GET` | `/dashboard/{session_id}` | Session dashboard from memory or MongoDB fallback |
 | `GET` | `/dashboard/history/all` | Last 10 analyses from MongoDB |
 | `GET` | `/dashboard/stats/global` | Aggregate statistics across all sessions |
+| `GET` | `/voice/status` | Check if Bhashini voice services are configured |
+| `POST` | `/voice/transcribe` | Speech-to-text via Bhashini ASR |
+| `POST` | `/voice/synthesize` | Text-to-speech via Bhashini TTS (gTTS fallback) |
+| `POST` | `/voice/translate` | Translate text between Indian languages |
+| `POST` | `/voice/detect` | Detect language of input text |
 
 ---
 

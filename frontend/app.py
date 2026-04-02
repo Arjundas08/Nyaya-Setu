@@ -333,6 +333,124 @@ transition:all 0.3s ease;cursor:pointer;
 .dyk-dot.active{{
 background:#D4AF37;width:24px;border-radius:4px;
 }}
+
+/* ══════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE STYLES
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {{
+    /* Global mobile adjustments */
+    html, body {{
+        font-size: 14px !important;
+    }}
+    
+    /* Hero section */
+    h1 {{
+        font-size: 32px !important;
+        line-height: 1.2 !important;
+    }}
+    
+    /* Feature cards - single column on mobile */
+    .feat-card {{
+        margin: 12px 8px !important;
+        padding: 20px 16px !important;
+    }}
+    
+    /* Buttons - full width on mobile */
+    .stButton > button {{
+        padding: 14px 20px !important;
+        font-size: 14px !important;
+        min-height: 48px !important; /* Touch-friendly */
+    }}
+    
+    /* Audio input - larger touch target */
+    [data-testid="stAudioInput"] {{
+        transform: scale(1.1) !important;
+    }}
+    
+    /* Chat input */
+    [data-testid="stChatInput"] {{
+        border-radius: 25px !important;
+        padding: 8px !important;
+    }}
+    
+    /* File uploader */
+    [data-testid="stFileUploader"] {{
+        padding: 16px !important;
+    }}
+    
+    /* Selectbox */
+    [data-testid="stSelectbox"] > div > div {{
+        min-height: 44px !important;
+    }}
+    
+    /* Text area */
+    [data-testid="stTextArea"] textarea {{
+        min-height: 120px !important;
+        font-size: 16px !important; /* Prevents zoom on iOS */
+    }}
+    
+    /* Text input */
+    [data-testid="stTextInput"] input {{
+        min-height: 44px !important;
+        font-size: 16px !important;
+    }}
+    
+    /* Expander */
+    [data-testid="stExpander"] {{
+        border-radius: 12px !important;
+    }}
+    
+    /* Hide particles on mobile for performance */
+    .particle {{
+        display: none !important;
+    }}
+    
+    /* Columns stack on mobile */
+    [data-testid="column"] {{
+        width: 100% !important;
+        flex: 1 1 100% !important;
+    }}
+}}
+
+@media (max-width: 480px) {{
+    /* Extra small screens */
+    h1 {{
+        font-size: 26px !important;
+    }}
+    
+    .stButton > button {{
+        padding: 12px 16px !important;
+        font-size: 13px !important;
+    }}
+    
+    /* Tighter spacing */
+    [data-testid="block-container"] > div {{
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }}
+}}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {{
+    /* Remove hover effects on touch devices */
+    .feat-card:hover {{
+        transform: none !important;
+    }}
+    
+    .stButton > button:hover {{
+        transform: none !important;
+    }}
+    
+    /* Larger tap targets */
+    .stButton > button {{
+        min-height: 52px !important;
+    }}
+    
+    /* Better scrolling */
+    [data-testid="stAppViewContainer"] {{
+        -webkit-overflow-scrolling: touch !important;
+    }}
+}}
 </style>
 """, unsafe_allow_html=True)
 

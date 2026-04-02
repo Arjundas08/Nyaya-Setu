@@ -440,6 +440,19 @@ nav[data-testid="stSidebarNav"],[data-testid="stSidebarContent"] ul,
 [data-testid="stTextArea"]>div>div>textarea:focus{{border-color:#D4AF37!important;box-shadow:0 0 15px rgba(212,175,55,0.12)!important;}}
 [data-testid="stDateInput"]>div>div>input{{background:rgba(18,18,28,0.9)!important;border:1px solid rgba(212,175,55,0.2)!important;border-radius:12px!important;color:#F5F5F7!important;}}
 @keyframes fadein{{from{{opacity:0;transform:translateY(12px);}}to{{opacity:1;transform:translateY(0);}}}}
+
+/* ══ MOBILE RESPONSIVE ══ */
+@media (max-width: 768px) {{
+    h1 {{ font-size: 32px !important; }}
+    .stButton>button {{ padding: 14px 20px !important; min-height: 48px !important; }}
+    .stDownloadButton>button {{ padding: 14px 20px !important; min-height: 48px !important; }}
+    [data-testid="stTextInput"]>div>div>input {{ font-size: 16px !important; padding: 12px !important; }}
+    [data-testid="stTextArea"]>div>div>textarea {{ font-size: 16px !important; min-height: 120px !important; }}
+    [data-testid="column"] {{ width: 100% !important; flex: 1 1 100% !important; }}
+}}
+@media (max-width: 480px) {{
+    h1 {{ font-size: 24px !important; }}
+}}
 </style>""", unsafe_allow_html=True)
 
 

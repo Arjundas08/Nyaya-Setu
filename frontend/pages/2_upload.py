@@ -21,6 +21,22 @@ def b64(path):
 LOGO = b64(LOGO_PATH)
 BG   = b64(BG_PATH)
 
+
+# ════════════════════════════════════════════════════════════
+# VOICE API FUNCTIONS
+# ════════════════════════════════════════════════════════════
+def transcribe_audio(audio_bytes: bytes, language: str = "Hindi") -> str:
+    """Send audio to backend for transcription."""
+    try:
+        files = {"audio": ("recording.wav", audio_bytes, "audio/wav")}
+        data = {"language": language}
+        r = requests.post(f"{API}/voice/transcribe", files=files, data=data, timeout=30)
+        if r.status_code == 200:
+            return r.json().get("text", "")
+    except Exception as e:
+        st.error(f"Transcription failed: {e}")
+    return ""
+
 # ════════════════════════════════════════════════════════════
 # CSS — INJECT ONCE, no f-string interpolation of large data
 # ════════════════════════════════════════════════════════════
@@ -94,6 +110,20 @@ nav[data-testid="stSidebarNav"],[data-testid="stSidebarContent"] ul,
 
 @keyframes fadein{{ from{{opacity:0;transform:translateY(14px);}} to{{opacity:1;transform:translateY(0);}} }}
 @keyframes flicker{{ 0%,100%{{opacity:1;}} 50%{{opacity:0.78;}} }}
+
+/* ══ MOBILE RESPONSIVE ══ */
+@media (max-width: 768px) {{
+    h1 {{ font-size: 32px !important; }}
+    [data-testid="stFileUploader"] {{ padding: 16px !important; border-radius: 16px !important; }}
+    [data-testid="stCameraInput"] {{ border-radius: 16px !important; }}
+    [data-testid="stAudioInput"] {{ transform: scale(1.1) !important; }}
+    .stButton>button {{ padding: 14px 20px !important; min-height: 48px !important; font-size: 14px !important; }}
+    .stTabs [data-baseweb="tab"] {{ padding: 10px 14px !important; font-size: 12px !important; }}
+    [data-testid="column"] {{ width: 100% !important; flex: 1 1 100% !important; margin-bottom: 16px !important; }}
+}}
+@media (max-width: 480px) {{
+    h1 {{ font-size: 24px !important; }}
+}}
 </style>"""
     
     # Use st.html for pure HTML/CSS (newer Streamlit versions) or markdown with unsafe_allow_html
@@ -599,13 +629,46 @@ def main():
         fname      = "camera_capture.jpg"
         ctype      = "image/jpeg"
     elif audio:
+        # Voice transcription with Bhashini
         st.markdown("""
 <div style="background:rgba(255,119,34,0.07);border:1px solid rgba(255,119,34,0.25);
-border-radius:14px;padding:18px 28px;margin:16px 5%;
-font-size:14px;color:#FF7722;text-align:center;">
-🎙️ Voice received. Bhashini transcription active —
-connect <code>backend/services/voice.py</code> to enable full analysis.
+border-radius:14px;padding:18px 28px;margin:16px 5%;">
+<div style="font-size:14px;color:#FF7722;text-align:center;margin-bottom:12px;">
+🎙️ Voice recording received — Bhashini AI will transcribe your legal statement.
+</div>
 </div>""", unsafe_allow_html=True)
+        
+        # Language selector for voice
+        lang_col1, lang_col2, lang_col3 = st.columns([1, 2, 1])
+        with lang_col2:
+            voice_lang = st.selectbox(
+                "Select your speaking language",
+                ["Hindi", "Telugu", "Tamil", "Kannada", "English"],
+                key="voice_lang"
+            )
+            if st.button("🎯 Transcribe Voice", key="transcribe_voice_btn", use_container_width=True):
+                with st.spinner("Transcribing with Bhashini AI..."):
+                    audio_bytes = audio.read()
+                    transcribed = transcribe_audio(audio_bytes, voice_lang)
+                    if transcribed:
+                        st.session_state["voice_transcription"] = transcribed
+                        st.success("✅ Voice transcribed successfully!")
+                    else:
+                        st.error("Could not transcribe. Please speak clearly and try again.")
+        
+        # Show transcription if available
+        if "voice_transcription" in st.session_state and st.session_state["voice_transcription"]:
+            st.markdown(f"""
+<div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);
+border-radius:14px;padding:18px 28px;margin:16px 5%;">
+<div style="font-size:11px;color:#4ADE80;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">
+📝 Your Voice Statement
+</div>
+<div style="font-size:15px;color:#F5F5F7;line-height:1.8;">
+{st.session_state["voice_transcription"]}
+</div>
+</div>""", unsafe_allow_html=True)
+            st.info("💡 This transcription has been saved. You can now use the Chat page to ask questions about your situation, or upload a related document for full analysis.")
 
     # ── Analyze button ──
     if file_bytes:

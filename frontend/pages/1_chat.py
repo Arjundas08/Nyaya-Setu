@@ -1,5 +1,5 @@
 import streamlit as st
-import base64, os, uuid, requests, textwrap
+import base64, os, uuid, requests, textwrap, io
 
 st.set_page_config(
     page_title="Nyaya-Setu | Legal Chat",
@@ -21,6 +21,37 @@ BG = b64(BG_PATH)
 # ── helper: strips indentation so Streamlit never sees 4-space code blocks ──
 def md(html, **kw):
     st.markdown(textwrap.dedent(html), unsafe_allow_html=True, **kw)
+
+
+# ════════════════════════════════════════════════════════════
+# VOICE API FUNCTIONS
+# ════════════════════════════════════════════════════════════
+def transcribe_audio(audio_bytes: bytes, language: str = "Hindi") -> str:
+    """Send audio to backend for transcription."""
+    try:
+        files = {"audio": ("recording.wav", audio_bytes, "audio/wav")}
+        data = {"language": language}
+        r = requests.post(f"{API}/voice/transcribe", files=files, data=data, timeout=30)
+        if r.status_code == 200:
+            return r.json().get("text", "")
+    except Exception as e:
+        st.error(f"Transcription failed: {e}")
+    return ""
+
+
+def synthesize_speech(text: str, language: str = "Hindi") -> bytes:
+    """Get audio bytes from backend TTS."""
+    try:
+        r = requests.post(
+            f"{API}/voice/synthesize",
+            json={"text": text, "language": language, "gender": "female"},
+            timeout=30
+        )
+        if r.status_code == 200:
+            return r.content
+    except Exception as e:
+        st.error(f"Speech synthesis failed: {e}")
+    return None
 
 
 # ════════════════════════════════════════════════════════════
@@ -55,6 +86,20 @@ nav[data-testid="stSidebarNav"],[data-testid="stSidebarContent"] ul,
 @keyframes fadein{{from{{opacity:0;transform:translateY(10px);}}to{{opacity:1;transform:translateY(0);}}}}
 @keyframes flicker{{0%,100%{{opacity:1;}}50%{{opacity:0.75;}}}}
 @keyframes pulse{{0%,100%{{box-shadow:0 0 0 0 rgba(212,175,55,0.2);}}50%{{box-shadow:0 0 0 8px rgba(212,175,55,0);}}}}
+
+/* ══ MOBILE RESPONSIVE ══ */
+@media (max-width: 768px) {{
+    h1 {{ font-size: 32px !important; }}
+    [data-testid="stChatInput"] {{ border-radius: 25px !important; }}
+    [data-testid="stChatInput"] textarea {{ font-size: 16px !important; min-height: 44px !important; }}
+    .stButton>button {{ padding: 12px 18px !important; font-size: 13px !important; min-height: 48px !important; }}
+    [data-testid="stAudioInput"] {{ transform: scale(1.2) !important; }}
+    [data-testid="stExpander"] {{ margin: 8px 0 !important; }}
+}}
+@media (max-width: 480px) {{
+    h1 {{ font-size: 24px !important; line-height: 1.2 !important; }}
+    [data-testid="block-container"] > div {{ padding: 0 8px !important; }}
+}}
 </style>""", unsafe_allow_html=True)
 
 
@@ -111,9 +156,9 @@ f'</div>',
 
 
 # ════════════════════════════════════════════════════════════
-# AI BUBBLE
+# AI BUBBLE (with optional speaker button)
 # ════════════════════════════════════════════════════════════
-def ai_bubble(text, contract_hits=0, law_hits=0):
+def ai_bubble(text, contract_hits=0, law_hits=0, msg_idx=None, lang="English"):
     parts      = text.split("📋 Next Steps:") if "📋 Next Steps:" in text else [text, None]
     main_text  = parts[0].strip()
     next_steps = parts[1].strip() if parts[1] else None
@@ -147,6 +192,21 @@ f'<div style="font-size:14px;color:#E0E0E7;line-height:1.82;">{main_text}</div>{
 f'<div style="font-size:10px;color:#333;margin-top:4px;padding-left:6px;letter-spacing:1px;">Nyaya-Setu AI · Powered by Groq</div>'
 f'</div></div>',
         unsafe_allow_html=True)
+    
+    # Add speaker button after the bubble
+    if msg_idx is not None:
+        col1, col2 = st.columns([1, 8])
+        with col1:
+            if st.button("🔊", key=f"speak_{msg_idx}", help="Listen to this response"):
+                with st.spinner("Generating speech..."):
+                    audio = synthesize_speech(text, lang)
+                    if audio:
+                        st.session_state[f"audio_{msg_idx}"] = audio
+        
+        # Play audio if available
+        audio_key = f"audio_{msg_idx}"
+        if audio_key in st.session_state and st.session_state[audio_key]:
+            st.audio(st.session_state[audio_key], format="audio/wav")
 
 
 # ════════════════════════════════════════════════════════════
@@ -283,6 +343,7 @@ def main():
 
     if "session_id" not in st.session_state: st.session_state.session_id = str(uuid.uuid4())[:16]
     if "messages"   not in st.session_state: st.session_state.messages   = []
+    if "voice_text" not in st.session_state: st.session_state.voice_text = ""
 
     doc_context_sidebar()
     render_header()
@@ -291,6 +352,48 @@ def main():
 
     lang = lang_selector()
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+    # ── Voice Input Section ────────────────────────────────
+    with st.expander("🎤 Voice Input — Speak Your Question", expanded=False):
+        st.markdown(
+            '<div style="font-size:12px;color:#8E8E93;margin-bottom:12px;">'
+            'Record your question in Hindi, Telugu, Tamil, Kannada, or English. '
+            'The AI will transcribe and answer.</div>',
+            unsafe_allow_html=True
+        )
+        voice_col1, voice_col2 = st.columns([3, 1])
+        with voice_col1:
+            audio_input = st.audio_input("Record your question", key="voice_record", label_visibility="collapsed")
+        with voice_col2:
+            if audio_input:
+                if st.button("🎯 Transcribe", key="transcribe_btn", use_container_width=True):
+                    with st.spinner("Transcribing..."):
+                        audio_bytes = audio_input.read()
+                        text = transcribe_audio(audio_bytes, lang)
+                        if text:
+                            st.session_state.voice_text = text
+                            st.success(f"✅ Transcribed: {text[:100]}...")
+                        else:
+                            st.error("Could not transcribe. Try speaking more clearly.")
+        
+        if st.session_state.voice_text:
+            st.markdown(
+                f'<div style="background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.3);'
+                f'border-radius:12px;padding:14px;margin-top:10px;font-size:14px;color:#F5F5F7;">'
+                f'📝 <strong>Transcribed:</strong> {st.session_state.voice_text}</div>',
+                unsafe_allow_html=True
+            )
+            if st.button("📤 Send This Question", key="send_voice_btn"):
+                question = st.session_state.voice_text
+                st.session_state.voice_text = ""
+                st.session_state.messages.append({"role":"user","content":question})
+                result = call_chat(question, st.session_state.session_id, lang)
+                answer = result.get("answer","I could not process your question.")
+                ch, lh = result.get("contract_hits",0), result.get("law_hits",0)
+                st.session_state.messages.append({"role":"assistant","content":answer,"contract_hits":ch,"law_hits":lh})
+                st.rerun()
+
+    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
     selected_q = quick_questions()
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
@@ -306,11 +409,14 @@ def main():
 '</div>',
             unsafe_allow_html=True)
 
-        for msg in st.session_state.messages:
+        # Render messages with speaker buttons
+        msg_idx = 0
+        for i, msg in enumerate(st.session_state.messages):
             if msg["role"] == "user":
                 user_bubble(msg["content"])
             else:
-                ai_bubble(msg["content"], msg.get("contract_hits",0), msg.get("law_hits",0))
+                ai_bubble(msg["content"], msg.get("contract_hits",0), msg.get("law_hits",0), msg_idx=msg_idx, lang=lang)
+                msg_idx += 1
 
     prompt   = st.chat_input("Ask your legal question... (Hindi, Telugu, English, Tamil, Kannada)", key="chat_input")
     question = selected_q or prompt

@@ -97,6 +97,16 @@ nav[data-testid="stSidebarNav"],[data-testid="stSidebarContent"] ul,
 [data-testid="stTextInput"]>div>div>input::placeholder{{color:#444!important;}}
 @keyframes fadein{{from{{opacity:0;transform:translateY(14px);}}to{{opacity:1;transform:translateY(0);}}}}
 @keyframes scoreGlow{{0%,100%{{opacity:0.8;}}50%{{opacity:1;}}}}
+
+/* ══ MOBILE RESPONSIVE ══ */
+@media (max-width: 768px) {{
+    h1 {{ font-size: 32px !important; }}
+    [data-testid="stTextInput"]>div>div>input {{ padding: 12px 18px !important; font-size: 16px !important; border-radius: 25px !important; }}
+    .stButton>button {{ padding: 14px 20px !important; min-height: 48px !important; }}
+}}
+@media (max-width: 480px) {{
+    h1 {{ font-size: 24px !important; }}
+}}
 </style>""", unsafe_allow_html=True)
 
 

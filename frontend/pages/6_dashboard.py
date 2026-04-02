@@ -110,6 +110,16 @@ nav[data-testid="stSidebarNav"],[data-testid="stSidebarContent"] ul,
 .stButton>button:hover{{background:#D4AF37!important;color:#000!important;box-shadow:0 0 20px rgba(212,175,55,0.4)!important;}}
 @keyframes fadein{{from{{opacity:0;transform:translateY(14px);}}to{{opacity:1;transform:translateY(0);}}}}
 @keyframes countup{{from{{opacity:0;transform:scale(0.8);}}to{{opacity:1;transform:scale(1);}}}}
+
+/* ══ MOBILE RESPONSIVE ══ */
+@media (max-width: 768px) {{
+    h1 {{ font-size: 32px !important; }}
+    .stButton>button {{ padding: 14px 20px !important; min-height: 48px !important; }}
+    [data-testid="column"] {{ width: 100% !important; flex: 1 1 100% !important; }}
+}}
+@media (max-width: 480px) {{
+    h1 {{ font-size: 24px !important; }}
+}}
 </style>""", unsafe_allow_html=True)
 
 

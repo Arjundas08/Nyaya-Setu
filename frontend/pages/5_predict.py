@@ -26,6 +26,22 @@ def md(html, **kw):
 
 
 # ════════════════════════════════════════════════════════════
+# VOICE API FUNCTIONS
+# ════════════════════════════════════════════════════════════
+def transcribe_audio(audio_bytes: bytes, language: str = "Hindi") -> str:
+    """Send audio to backend for transcription."""
+    try:
+        files = {"audio": ("recording.wav", audio_bytes, "audio/wav")}
+        data = {"language": language}
+        r = requests.post(f"{API}/voice/transcribe", files=files, data=data, timeout=30)
+        if r.status_code == 200:
+            return r.json().get("text", "")
+    except Exception as e:
+        st.error(f"Transcription failed: {e}")
+    return ""
+
+
+# ════════════════════════════════════════════════════════════
 # WIN PROBABILITY GAUGE — SVG arc using stroke-dasharray
 # ════════════════════════════════════════════════════════════
 def gauge_svg(prob: int) -> str:
@@ -100,6 +116,19 @@ nav[data-testid="stSidebarNav"],[data-testid="stSidebarContent"] ul,
 @keyframes fadein{{from{{opacity:0;transform:translateY(14px);}}to{{opacity:1;transform:translateY(0);}}}}
 @keyframes pulse{{0%,100%{{opacity:1;}}50%{{opacity:0.5;}}}}
 .oracle-section{{animation:fadein 0.5s ease both;}}
+
+/* ══ MOBILE RESPONSIVE ══ */
+@media (max-width: 768px) {{
+    h1 {{ font-size: 32px !important; }}
+    .stButton>button {{ padding: 14px 20px !important; min-height: 48px !important; }}
+    [data-testid="stTextArea"]>div>div>textarea {{ font-size: 16px !important; min-height: 140px !important; }}
+    [data-testid="stTextInput"]>div>div>input {{ font-size: 16px !important; }}
+    [data-testid="stAudioInput"] {{ transform: scale(1.1) !important; }}
+    [data-testid="column"] {{ width: 100% !important; flex: 1 1 100% !important; }}
+}}
+@media (max-width: 480px) {{
+    h1 {{ font-size: 24px !important; }}
+}}
 </style>""", unsafe_allow_html=True)
 
 
@@ -183,8 +212,32 @@ def render_form() -> dict | None:
         st.markdown(
 "<div style='font-size:12px;color:#A1A1AA;font-weight:600;letter-spacing:0.5px;margin-bottom:4px;'>Describe Your Situation in Detail *</div>",
             unsafe_allow_html=True)
+        
+        # Voice input option
+        with st.expander("🎤 Or speak your situation", expanded=False):
+            voice_lang = st.selectbox(
+                "Speaking language",
+                ["Hindi", "Telugu", "Tamil", "Kannada", "English"],
+                key="oracle_voice_lang",
+                label_visibility="collapsed"
+            )
+            voice_audio = st.audio_input("Record your situation", key="oracle_voice", label_visibility="collapsed")
+            if voice_audio:
+                if st.button("🎯 Transcribe", key="oracle_transcribe_btn"):
+                    with st.spinner("Transcribing with Bhashini AI..."):
+                        audio_bytes = voice_audio.read()
+                        transcribed = transcribe_audio(audio_bytes, voice_lang)
+                        if transcribed:
+                            st.session_state["oracle_voice_text"] = transcribed
+                            st.success("✅ Transcribed! Text added below.")
+                        else:
+                            st.error("Could not transcribe. Try speaking more clearly.")
+        
+        # Pre-fill with voice transcription if available
+        default_desc = st.session_state.get("oracle_voice_text", "")
         description = st.text_area(
             "Situation",
+            value=default_desc,
             placeholder=(
                 "Example: My employer terminated me on 15th January 2026 without any notice "
                 "or notice pay. I had worked there for 3 years as a software engineer. "
