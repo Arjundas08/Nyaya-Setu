@@ -17,7 +17,7 @@ sentence-transformers>=2.2.0
 faiss-cpu==1.7.4
 
 # ── OCR ──
-paddleocr==2.7.3
+paddleocr
 paddlepaddle==3.2.2
 
 # ── Database ──
