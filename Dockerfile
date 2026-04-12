@@ -1,32 +1,42 @@
-FROM python:3.11-slim
+FROM python:3.10-slim
 
-WORKDIR /app
-
-# Install system dependencies for PaddleOCR
+# Install system dependencies + nginx
 RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
+    nginx \
+    libgomp1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
     libxrender-dev \
-    libgomp1 \
+    libgl1-mesa-glx \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for layer caching
-COPY requirements.txt .
+# Create non-root user (HuggingFace requirement)
+RUN useradd -m -u 1000 user
+ENV PATH="/home/user/.local/bin:$PATH"
+
+WORKDIR /app
+
+# Install Python dependencies
+COPY --chown=user requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Download spaCy model
-RUN python -m spacy download en_core_web_sm || true
+# Pre-download PaddleOCR models during build (so first boot isn't slow)
+RUN python -c "from paddleocr import PaddleOCR; PaddleOCR(use_angle_cls=True, lang='en')"
 
-# Copy application code
-COPY . .
+# Copy entire project
+COPY --chown=user . /app
 
-# Build ChromaDB if data exists
-RUN if [ -d "data/legal_pdfs" ]; then python scripts/build_knowledge_base.py || true; fi
+# Copy nginx config
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Expose both ports
-EXPOSE 8000 8501
+# Build ChromaDB knowledge base during Docker build
+RUN python scripts/build_knowledge_base.py
 
-# Start both services
-CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port 8000 & streamlit run frontend/app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true"]
+# Make startup script executable
+RUN chmod +x start.sh
+
+EXPOSE 7860
+
+CMD ["./start.sh"]
