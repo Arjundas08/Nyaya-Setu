@@ -1,0 +1,5 @@
+data/legal_pdfs/
+frontend/*.png
+frontend/*.jpg
+*.png
+*.jpg
