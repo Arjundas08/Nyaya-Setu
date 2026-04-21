@@ -1,13 +1,11 @@
 FROM python:3.10-slim
 
 RUN apt-get update && apt-get install -y \
-    nginx \
     libgomp1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
     libxrender-dev \
-    libgl1-mesa-glx \
     curl \
     git \
     && rm -rf /var/lib/apt/lists/*
@@ -41,14 +39,9 @@ RUN curl -L "https://github.com/Arjundas08/nyaya-setu/raw/main/frontend/nyayaset
     curl -L "https://github.com/Arjundas08/nyaya-setu/raw/main/nyayasetu_bg.png" \
     -o /app/nyayasetu_bg.png 2>/dev/null || true
 
-# Copy nginx config
-COPY nginx.conf /etc/nginx/nginx.conf
-
 # Build ChromaDB from the downloaded PDFs
 RUN python scripts/build_knowledge_base.py
 
-RUN chmod +x start.sh
+EXPOSE 8000
 
-EXPOSE 7860
-
-CMD ["./start.sh"]
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
