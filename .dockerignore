@@ -1,0 +1,54 @@
+# ── Virtual environments (huge, not needed in Docker) ──
+.venv/
+venv/
+venv311/
+env/
+
+# ── Git ──
+.git/
+.gitignore
+
+# ── IDE ──
+.vscode/
+.idea/
+
+# ── Python cache ──
+__pycache__/
+*.pyc
+*.pyo
+
+# ── Generated data (rebuilt in Docker) ──
+chroma_db/
+backend/chroma_db/
+faiss_index/
+
+# ── Large binary files ──
+*.png
+*.jpg
+nyayasetu_bg.png
+any_document.jpg
+
+# ── OS files ──
+.DS_Store
+Thumbs.db
+
+# ── Test files ──
+test_*.py
+diagnose.py
+check_structure.py
+fix_model_and_path.py
+read_files.py
+
+# ── Docs (not needed at runtime) ──
+DEPLOYMENT*.md
+HOW_TO_COMMIT.md
+DEPLOYMENT_SUMMARY.txt
+README.md
+
+# ── HuggingFace ──
+.hfignore
+
+# ── Env files (secrets loaded via env vars) ──
+.env
+.env.*
+!.env.example

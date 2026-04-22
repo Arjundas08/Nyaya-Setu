@@ -347,14 +347,20 @@ if __name__ == "__main__":
     # ── Check if ChromaDB already exists ─────────
     if os.path.exists(CHROMA_PATH):
         print(f"\n⚠️  ChromaDB already exists at '{CHROMA_PATH}/'")
-        ans = input("   Rebuild from scratch? (y/n): ").strip().lower()
-        if ans == "y":
+        # In Docker builds, always rebuild without asking
+        if os.environ.get("BUILD_MODE") == "docker":
+            print("   Docker build detected — auto-rebuilding...")
             shutil.rmtree(CHROMA_PATH)
             print("   Old ChromaDB deleted.\n")
         else:
-            print("   Keeping existing ChromaDB.")
-            print("   To test it, run: python scripts/test_knowledge_base.py")
-            sys.exit(0)
+            ans = input("   Rebuild from scratch? (y/n): ").strip().lower()
+            if ans == "y":
+                shutil.rmtree(CHROMA_PATH)
+                print("   Old ChromaDB deleted.\n")
+            else:
+                print("   Keeping existing ChromaDB.")
+                print("   To test it, run: python scripts/test_knowledge_base.py")
+                sys.exit(0)
 
     # ── Run the pipeline ─────────────────────────
     docs    = load_all_pdfs()
