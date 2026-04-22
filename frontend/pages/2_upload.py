@@ -594,7 +594,7 @@ def call_api(file_bytes, filename, ctype, session_id):
         r = requests.post(
             f"{API}/analyze/upload",
             files={"file": (filename, file_bytes, ctype)},
-            data={"session_id": session_id},
+            params={"session_id": session_id},
             timeout=90,
         )
         r.raise_for_status()
