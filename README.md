@@ -2,7 +2,7 @@
 title: Nyaya Setu
 emoji: ⚖️
 colorFrom: yellow
-colorTo: orange
+colorTo: yellow
 sdk: docker
 pinned: false
 ---
