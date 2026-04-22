@@ -198,30 +198,3 @@ def get_stats() -> dict:
 def is_connected() -> bool:
     """Check if MongoDB is connected. Used by /health endpoint."""
     return _get_collection() is not None
-# ════════════════════════════════════════════════════════
-# FILE: backend/routes/analyze.py
-# ADD MongoDB save call at the END of upload_document()
-# Find the return statement and add BEFORE it:
-# ════════════════════════════════════════════════════════
-
-    # ── [NEW] Save to MongoDB ─────────────────────────
-    # Non-fatal — upload succeeds even if MongoDB is down
-    try:
-        from services.database import save_analysis
-        save_analysis(session_id, {
-            "filename":        filename,
-            "file_type":       file_type_label,
-            "total_chars":     len(safe_text),
-            "clause_count":    len(clauses),
-            "high_risk_count": sum(1 for c in clauses if c.get("risk_level") == "high"),
-            "clauses":         clauses,
-            "risk":            risk,
-        })
-    except Exception as e:
-        logger.error(f"MongoDB save failed (non-fatal): {e}")
-
-    return {
-        "success":        True,
-        "session_id":     session_id,
-        # ... rest of your existing return dict unchanged ...
-    }
