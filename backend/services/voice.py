@@ -216,16 +216,9 @@ def text_to_speech(text: str, language: str = "Hindi", gender: str = "female"):
                     audio_data += chunk["data"]
             return audio_data
             
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_closed():
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            
-        return loop.run_until_complete(_synthesize())
+        # Run in a new event loop safely
+        return asyncio.run(_synthesize())
+
         
     except ImportError:
         print("[TTS] edge-tts not installed. Fallback to gTTS")

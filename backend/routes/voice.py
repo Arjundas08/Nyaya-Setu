@@ -97,7 +97,7 @@ async def transcribe_audio(
 
 
 @router.post("/synthesize")
-async def synthesize_speech(request: TTSRequest):
+def synthesize_speech(request: TTSRequest):
     """
     Convert text to speech using Bhashini TTS.
     

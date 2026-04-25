@@ -209,7 +209,7 @@ f'</div></div>',
         # Play audio if available
         audio_key = f"audio_{msg_idx}"
         if audio_key in st.session_state and st.session_state[audio_key]:
-            st.audio(st.session_state[audio_key], format="audio/wav")
+            st.audio(st.session_state[audio_key], format="audio/wav", autoplay=True)
 
 
 # ════════════════════════════════════════════════════════════
