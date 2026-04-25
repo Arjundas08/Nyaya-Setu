@@ -33,7 +33,7 @@ try:
     if os.getenv("GEMINI_API_KEY"):
         _llm = ChatGoogleGenerativeAI(
             google_api_key=os.getenv("GEMINI_API_KEY"),
-            model=os.getenv("GEMINI_MODEL", "gemini-1.5-flash"),
+            model=os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
             temperature=0.1,
             max_tokens=900,
         )

@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain.schema import HumanMessage, AIMessage, SystemMessage
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 load_dotenv()
 
@@ -53,7 +53,7 @@ try:
         print("Loading Gemini LLM...")
         _llm = ChatGoogleGenerativeAI(
             google_api_key=GEMINI_API_KEY,
-            model=os.getenv("GEMINI_MODEL", "gemini-1.5-flash"),
+            model=os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
             temperature=0.1,
             max_tokens=1024,
             request_timeout=30,

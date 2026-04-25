@@ -38,7 +38,7 @@ def _validate_env():
     """Check all required env vars exist before server starts."""
     required = {
         "GEMINI_API_KEY": "Get from https://aistudio.google.com",
-        "GEMINI_MODEL":   "e.g. gemini-1.5-flash",
+        "GEMINI_MODEL":   "e.g. gemini-2.0-flash",
         "MONGO_URI":    "Get from MongoDB Atlas dashboard",
     }
     missing = []
@@ -122,7 +122,7 @@ async def health():
         "status":   "healthy",
         "version":  "2.0",
         "mongodb":  "connected" if is_connected() else "not_connected",
-        "model":    os.getenv("GEMINI_MODEL", "gemini-1.5-flash"),
+        "model":    os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
     }
 
 # ════════════════════════════════════════════════════════
