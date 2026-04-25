@@ -7,8 +7,7 @@ print("Loading PaddleOCR engine (first run downloads models ~500MB)...")
 
 _ocr = PaddleOCR(
     use_angle_cls=True,
-    lang="en",
-    show_log=False
+    lang="en"
 )
 
 print("PaddleOCR ready")
