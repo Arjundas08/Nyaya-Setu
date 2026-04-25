@@ -404,7 +404,7 @@ def run_search(query: str, category: str) -> dict | None:
             resp = requests.post(
                 f"{API}/search/cases",
                 json={"query": query, "category": category, "top_k": 3, "explain": True},
-                timeout=50,
+                timeout=120,
             )
             return resp.json()
     except requests.exceptions.ConnectionError:

@@ -37,8 +37,8 @@ try:
 except Exception as e:
     print(f"⚠️ Risk engine LLM failed: {e}")
 
-MAX_RETRIES = 3
-RETRY_DELAY = 2.0
+MAX_RETRIES = 2
+RETRY_DELAY = 3.0
 
 
 # ════════════════════════════════════════════════════════
@@ -520,6 +520,9 @@ def calculate_risk_score(document_text: str, clauses: list = None) -> dict:
             for c in clauses[:10]
         ]
         clause_context = "Identified clauses:\n" + "\n".join(lines)
+
+    # Rate limit protection between LLM calls
+    time.sleep(5)
 
     raw_resp   = _call_llm_with_retry(_build_llm_prompt(document_text, clause_context))
     llm_parsed = _parse_llm_response(raw_resp) if raw_resp else None

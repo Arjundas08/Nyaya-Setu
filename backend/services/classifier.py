@@ -41,10 +41,10 @@ except Exception as e:
 # ════════════════════════════════════════════════════════
 # CONSTANTS
 # ════════════════════════════════════════════════════════
-CHUNK_SIZE = 3500
+CHUNK_SIZE = 8000    # Gemini can handle large inputs — fewer chunks = fewer API calls
 CHUNK_OVERLAP = 300
-MAX_RETRIES = 3
-RETRY_DELAY = 2.0
+MAX_RETRIES = 2      # Reduced to avoid long waits on rate limits
+RETRY_DELAY = 3.0    # Base delay between retries
 
 CLAUSE_TYPES = [
     "notice_period", "non_compete", "confidentiality",
@@ -226,17 +226,17 @@ def classify_clauses(document_text: str) -> list:
 
     all_clauses = []
 
-    for chunk in chunks:
+    for i, chunk in enumerate(chunks):
+        if i > 0:
+            time.sleep(4)  # Rate limit protection between chunks
 
         prompt = _build_prompt(chunk)
-
         raw = _call_llm_with_retry(prompt)
 
         if raw is None:
             continue
 
         clauses = _parse_clauses_from_response(raw)
-
         all_clauses.extend(clauses)
 
     risk_order = {"high": 0, "medium": 1, "low": 2}

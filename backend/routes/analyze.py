@@ -217,6 +217,9 @@ async def upload_document(
     clauses = classify_clauses(safe_text)
     timings["classify_ms"] = int((time.monotonic() - t0) * 1000)
 
+    # Rate limit protection — wait before next LLM call
+    time.sleep(5)
+
     # 7. Risk
     t0 = time.monotonic()
     risk = calculate_risk_score(safe_text, clauses)

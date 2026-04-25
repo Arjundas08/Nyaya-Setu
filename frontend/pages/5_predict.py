@@ -372,7 +372,7 @@ def run_oracle(form_data: dict) -> dict | None:
             resp = requests.post(
                 f"{API}/predict/outcome",
                 json=form_data,
-                timeout=45,     # IK + Groq can take up to 30s total
+                timeout=120,     # IK + LLM can take up to 60s total due to rate limits
             )
             result = resp.json()
         except requests.exceptions.ConnectionError:

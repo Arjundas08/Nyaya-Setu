@@ -322,7 +322,7 @@ def call_chat(question, session_id, language="English"):
         r = requests.post(
             f"{API}/chat/ask",
             json={"message": question, "session_id": session_id, "language": language},
-            timeout=60,
+            timeout=120,
         )
         r.raise_for_status()
         return r.json()
