@@ -18,19 +18,26 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # ── Import ALL routers ──────────────────────────────────
-from routes.analyze   import router as analyze_router
-from routes.chat      import router as chat_router
-from routes.search    import router as search_router
-from routes.generate  import router as generate_router
-from routes.predict   import router as predict_router
-from routes.dashboard import router as dashboard_router
-from routes.voice     import router as voice_router
+# We initialize these to None first so the server doesn't crash on NameError
+analyze_router = chat_router = search_router = generate_router = None
+predict_router = dashboard_router = voice_router = None
+
+try:
+    from routes.analyze   import router as analyze_router
+    from routes.chat      import router as chat_router
+    from routes.search    import router as search_router
+    from routes.generate  import router as generate_router
+    from routes.predict   import router as predict_router
+    from routes.dashboard import router as dashboard_router
+    from routes.voice     import router as voice_router
+except Exception as e:
+    print(f"⚠️ Warning: Some routes failed to import during startup: {e}")
 
 
 def _validate_env():
     """Check all required env vars exist before server starts."""
     required = {
-        "GEMINI_API_KEY": "Get from https://console.groq.com",
+        "GEMINI_API_KEY": "Get from https://aistudio.google.com",
         "GEMINI_MODEL":   "e.g. gemini-1.5-flash",
         "MONGO_URI":    "Get from MongoDB Atlas dashboard",
     }
@@ -70,14 +77,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Register ALL routers ────────────────────────────────
-app.include_router(analyze_router,  prefix="/analyze",   tags=["Document Analysis"])
-app.include_router(chat_router,     prefix="/chat",      tags=["Virtual Lawyer"])
-app.include_router(search_router,   prefix="/search",    tags=["Case Search"])
-app.include_router(generate_router, prefix="/generate",  tags=["Doc Generator"])
-app.include_router(predict_router,  prefix="/predict",   tags=["Outcome Predictor"])
-app.include_router(dashboard_router,prefix="/dashboard", tags=["Dashboard"])
-app.include_router(voice_router,    prefix="/voice",     tags=["Voice Services"])
+# ── Register ALL routers (if they imported successfully) ──
+if analyze_router:   app.include_router(analyze_router,  prefix="/analyze",   tags=["Document Analysis"])
+if chat_router:      app.include_router(chat_router,     prefix="/chat",      tags=["Virtual Lawyer"])
+if search_router:    app.include_router(search_router,   prefix="/search",    tags=["Case Search"])
+if generate_router:  app.include_router(generate_router, prefix="/generate",  tags=["Doc Generator"])
+if predict_router:   app.include_router(predict_router,  prefix="/predict",   tags=["Outcome Predictor"])
+if dashboard_router: app.include_router(dashboard_router,prefix="/dashboard", tags=["Dashboard"])
+if voice_router:     app.include_router(voice_router,    prefix="/voice",     tags=["Voice Services"])
 
 
 # ── Root endpoint ───────────────────────────────────────

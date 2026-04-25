@@ -10,9 +10,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     curl \
     git \
+    nginx \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Create non-root user ──
+# (Nginx needs root to start, so we'll adjust permissions)
 RUN useradd -m -u 1000 user
 ENV PATH="/home/user/.local/bin:$PATH"
 
@@ -28,31 +30,18 @@ RUN python -c "from paddleocr import PaddleOCR; PaddleOCR(use_angle_cls=True, la
 # ── Copy project files ──
 COPY --chown=user . /app
 
-# ── Download legal PDFs from GitHub during build ──
-RUN mkdir -p /app/data/legal_pdfs && \
-    curl -L --fail --retry 3 \
-    "https://github.com/Arjundas08/nyaya-setu/archive/refs/heads/main.tar.gz" \
-    | tar xz --strip-components=3 \
-    -C /app/data/legal_pdfs \
-    "nyaya-setu-main/data/legal_pdfs/" \
-    || echo "WARNING: Could not download PDFs from GitHub"
+# ── Setup Nginx ──
+COPY nginx.conf /etc/nginx/nginx.conf
+RUN touch /app/backend.log /app/streamlit.log && \
+    chown -R user:user /app && \
+    chmod +x /app/start.sh
 
-# ── Download images from GitHub ──
-RUN curl -L "https://github.com/Arjundas08/nyaya-setu/raw/main/frontend/nyayasetu_logo.png" \
-    -o /app/frontend/nyayasetu_logo.png 2>/dev/null || true && \
-    curl -L "https://github.com/Arjundas08/nyaya-setu/raw/main/frontend/nyaya_setu_bridge.png" \
-    -o /app/frontend/nyaya_setu_bridge.png 2>/dev/null || true && \
-    curl -L "https://github.com/Arjundas08/nyaya-setu/raw/main/nyayasetu_bg.png" \
-    -o /app/nyayasetu_bg.png 2>/dev/null || true
-
-# ── Build ChromaDB knowledge base (non-interactive) ──
+# ── Build ChromaDB knowledge base ──
 ENV BUILD_MODE=docker
-RUN python scripts/build_knowledge_base.py || echo "WARNING: Knowledge base build had issues, will retry at runtime"
+RUN python scripts/build_knowledge_base.py || echo "WARNING: Knowledge base build had issues"
 
-# ── Switch to non-root user ──
-USER user
-
-EXPOSE 8000
+# Hugging Face Spaces port
 EXPOSE 7860
 
-CMD uvicorn backend.main:app --host 0.0.0.0 --port 8000 & streamlit run frontend/app.py --server.port 7860 --server.address 0.0.0.0
+# Start everything via script
+CMD ["/bin/bash", "/app/start.sh"]

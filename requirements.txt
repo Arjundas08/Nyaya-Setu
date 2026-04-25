@@ -14,10 +14,13 @@ faiss-cpu
 edge-tts
 aiohttp
 paddleocr
-paddlex
+paddlepaddle
+torch
 PyMuPDF
 Werkzeug
 pydantic
 pydantic-core
 scikit-learn
 beautifulsoup4
+pillow
+numpy
