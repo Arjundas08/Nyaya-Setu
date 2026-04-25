@@ -181,94 +181,63 @@ def speech_to_text(audio_bytes: bytes, language: str = "Hindi") -> Tuple[Optiona
 
 
 # ════════════════════════════════════════════════════════════
-# TTS — Text to Speech
+# TTS — Text to Speech (Human-Like Neural Voices via Edge-TTS)
 # ════════════════════════════════════════════════════════════
-def text_to_speech(text: str, language: str = "Hindi", gender: str = "female") -> Optional[bytes]:
-    """
-    Convert text to speech using Bhashini TTS.
-    
-    Args:
-        text: Text to synthesize
-        language: "Hindi", "Telugu", "Tamil", "Kannada", "English"
-        gender: "male" or "female"
-    
-    Returns:
-        Audio bytes (WAV) or None on failure
-    """
+import asyncio
+
+def text_to_speech(text: str, language: str = "Hindi", gender: str = "female"):
     if not text or not text.strip():
         return None
     
-    lang_code = LANG_CODES.get(language, "hi")
-    if lang_code == "auto":
-        lang_code = "hi"  # Default for TTS
+    # Map to specific high-quality Neural voices
+    voice_map = {
+        "Hindi": {"female": "hi-IN-SwaraNeural", "male": "hi-IN-MadhurNeural"},
+        "Telugu": {"female": "te-IN-ShrutiNeural", "male": "te-IN-MohanNeural"},
+        "Tamil": {"female": "ta-IN-PallaviNeural", "male": "ta-IN-ValluvarNeural"},
+        "Kannada": {"female": "kn-IN-SapnaNeural", "male": "kn-IN-GaganNeural"},
+        "English": {"female": "en-IN-NeerjaNeural", "male": "en-IN-PrabhatNeural"},
+        "Bengali": {"female": "bn-IN-TanishaaNeural", "male": "bn-IN-BashkarNeural"},
+        "Gujarati": {"female": "gu-IN-DhwaniNeural", "male": "gu-IN-NiranjanNeural"},
+        "Marathi": {"female": "mr-IN-AarohiNeural", "male": "mr-IN-ManoharNeural"},
+        "Malayalam": {"female": "ml-IN-SobhanaNeural", "male": "ml-IN-MidhunNeural"},
+        "Auto-Detect": {"female": "hi-IN-SwaraNeural", "male": "hi-IN-MadhurNeural"}
+    }
     
-    # Get pipeline config for TTS
-    config = _get_pipeline_config("tts", lang_code)
-    if not config:
-        print("[Bhashini] Could not get TTS pipeline config, falling back to gTTS")
-        return _fallback_tts(text, lang_code)
+    voice = voice_map.get(language, voice_map["English"])[gender.lower()]
     
     try:
-        # Extract service info
-        pipeline_response = config.get("pipelineResponseConfig", [])
-        if not pipeline_response:
-            return _fallback_tts(text, lang_code)
+        import edge_tts
         
-        tts_config = pipeline_response[0].get("config", [])
-        if not tts_config:
-            return _fallback_tts(text, lang_code)
+        async def _synthesize():
+            communicate = edge_tts.Communicate(text, voice)
+            audio_data = b""
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    audio_data += chunk["data"]
+            return audio_data
+            
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_closed():
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+        return loop.run_until_complete(_synthesize())
         
-        service_id = tts_config[0].get("serviceId", "")
-        callback_url = config.get("pipelineInferenceAPIEndPoint", {}).get("callbackUrl", INFERENCE_URL)
-        inference_key = config.get("pipelineInferenceAPIEndPoint", {}).get("inferenceApiKey", {}).get("value", BHASHINI_INFERENCE_KEY)
-        
-        payload = {
-            "pipelineTasks": [{
-                "taskType": "tts",
-                "config": {
-                    "language": {"sourceLanguage": lang_code},
-                    "serviceId": service_id,
-                    "gender": gender,
-                    "samplingRate": 8000,
-                }
-            }],
-            "inputData": {
-                "input": [{"source": text}]
-            }
-        }
-        
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": inference_key,
-        }
-        
-        resp = requests.post(callback_url, json=payload, headers=headers, timeout=30)
-        
-        if resp.status_code == 200:
-            result = resp.json()
-            output = result.get("pipelineResponse", [])
-            if output:
-                audio_output = output[0].get("audio", [])
-                if audio_output:
-                    audio_base64 = audio_output[0].get("audioContent", "")
-                    if audio_base64:
-                        return base64.b64decode(audio_base64)
-        else:
-            print(f"[Bhashini TTS] Error {resp.status_code}: {resp.text[:200]}")
-    
+    except ImportError:
+        print("[TTS] edge-tts not installed. Fallback to gTTS")
+        return _fallback_tts(text, "en")
     except Exception as e:
-        print(f"[Bhashini TTS] Exception: {e}")
-    
-    # Fallback to gTTS
-    return _fallback_tts(text, lang_code)
+        print(f"[TTS Error] {e}")
+        return None
 
-
-def _fallback_tts(text: str, lang_code: str) -> Optional[bytes]:
-    """Fallback TTS using gTTS (Google Text-to-Speech)."""
+def _fallback_tts(text: str, lang_code: str):
     try:
         from gtts import gTTS
-        
-        # gTTS uses same ISO codes
+        import io
         tts = gTTS(text=text, lang=lang_code if lang_code != "auto" else "en")
         audio_buffer = io.BytesIO()
         tts.write_to_fp(audio_buffer)
@@ -277,7 +246,6 @@ def _fallback_tts(text: str, lang_code: str) -> Optional[bytes]:
     except Exception as e:
         print(f"[gTTS Fallback] Error: {e}")
         return None
-
 
 # ════════════════════════════════════════════════════════════
 # NMT — Neural Machine Translation

@@ -363,11 +363,7 @@ def main():
         )
         voice_col1, voice_col2 = st.columns([3, 1])
         with voice_col1:
-            # st.audio_input requires Streamlit ≥ 1.33.0
-            if hasattr(st, "audio_input"):
-                audio_input = st.audio_input("Record your question", key="voice_record", label_visibility="collapsed")
-            else:
-                audio_input = st.file_uploader("Upload voice recording", type=["wav", "mp3", "ogg", "m4a"], key="voice_record", label_visibility="collapsed")
+            audio_input = st.audio_input("Record your question", key="voice_record", label_visibility="collapsed")
         with voice_col2:
             if audio_input:
                 if st.button("🎯 Transcribe", key="transcribe_btn", use_container_width=True):
