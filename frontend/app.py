@@ -218,7 +218,7 @@ def inject_css():
     st.markdown(f"""
 <style>
 /* Hide Streamlit Ctrl+Enter Instruction */
-div[data-testid="InputInstructions"] { display: none !important; }
+div[data-testid="InputInstructions"] {{ display: none !important; }}
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 

@@ -51,7 +51,7 @@ def inject_css():
     # FIX: Use st.html instead of st.markdown for CSS to avoid markdown parsing issues
     css_content = f"""<style>
 /* Hide Streamlit Ctrl+Enter Instruction */
-div[data-testid="InputInstructions"] { display: none !important; }
+div[data-testid="InputInstructions"] {{ display: none !important; }}
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
 
